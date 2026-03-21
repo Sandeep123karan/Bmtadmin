@@ -1,3 +1,4 @@
+
 // const HotelBooking = require("../models/hotelBookingModel");
 
 // // GET all bookings (with filters)
@@ -5,25 +6,25 @@
 //   try {
 //     const filters = {};
 
-//     if (req.query.value) {
-//       filters[req.query.key] = { $regex: req.query.value, $options: 'i' };
+//     if (req.query.value && req.query.key) {
+//       filters[req.query.key] = { $regex: req.query.value, $options: "i" };
 //     }
 
 //     if (req.query.fromDate && req.query.toDate) {
 //       filters.createdAt = {
 //         $gte: new Date(req.query.fromDate),
-//         $lte: new Date(req.query.toDate)
+//         $lte: new Date(req.query.toDate),
 //       };
 //     }
 
-//     const bookings = await HotelBooking.find(filters);
+//     const bookings = await HotelBooking.find(filters).sort({ createdAt: -1 });
 //     res.json(bookings);
 //   } catch (err) {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
 
-// // POST add new booking
+// // CREATE booking
 // exports.addHotelBooking = async (req, res) => {
 //   try {
 //     const booking = await HotelBooking.create(req.body);
@@ -33,61 +34,141 @@
 //   }
 // };
 
-const HotelBooking = require("../models/hotelBookingModel");
+// // UPDATE booking
+// exports.updateHotelBooking = async (req, res) => {
+//   try {
+//     const updated = await HotelBooking.findByIdAndUpdate(
+//       req.params.id,
+//       req.body,
+//       { new: true }
+//     );
+//     res.json(updated);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
-// GET all bookings (with filters)
-exports.getHotelBookings = async (req, res) => {
+// // DELETE booking
+// exports.deleteHotelBooking = async (req, res) => {
+//   try {
+//     await HotelBooking.findByIdAndDelete(req.params.id);
+//     res.json({ message: "Deleted Successfully" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+
+
+
+
+const HotelBooking = require("../models/HotelBookingModel");
+
+/* ================= CREATE ================= */
+exports.createBooking = async (req, res) => {
   try {
-    const filters = {};
+    const data = req.body;
 
-    if (req.query.value && req.query.key) {
-      filters[req.query.key] = { $regex: req.query.value, $options: "i" };
+    // gallery minimum check
+    if (!data.gallery || data.gallery.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Minimum 3 gallery images required",
+      });
     }
 
-    if (req.query.fromDate && req.query.toDate) {
-      filters.createdAt = {
-        $gte: new Date(req.query.fromDate),
-        $lte: new Date(req.query.toDate),
-      };
-    }
+    const booking = await HotelBooking.create(data);
 
-    const bookings = await HotelBooking.find(filters).sort({ createdAt: -1 });
-    res.json(bookings);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(201).json({
+      success: true,
+      message: "Hotel booking created",
+      booking,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// CREATE booking
-exports.addHotelBooking = async (req, res) => {
+/* ================= GET ALL ================= */
+exports.getAllBookings = async (req, res) => {
   try {
-    const booking = await HotelBooking.create(req.body);
-    res.status(201).json(booking);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const bookings = await HotelBooking.find().sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// UPDATE booking
-exports.updateHotelBooking = async (req, res) => {
+/* ================= GET SINGLE ================= */
+exports.getSingleBooking = async (req, res) => {
   try {
-    const updated = await HotelBooking.findByIdAndUpdate(
+    const booking = await HotelBooking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      booking,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/* ================= UPDATE ================= */
+exports.updateBooking = async (req, res) => {
+  try {
+    const booking = await HotelBooking.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    res.json({
+      success: true,
+      message: "Booking updated",
+      booking,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// DELETE booking
-exports.deleteHotelBooking = async (req, res) => {
+/* ================= DELETE ================= */
+exports.deleteBooking = async (req, res) => {
   try {
     await HotelBooking.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted Successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    res.json({
+      success: true,
+      message: "Booking deleted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

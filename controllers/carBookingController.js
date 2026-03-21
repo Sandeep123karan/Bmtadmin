@@ -27,6 +27,8 @@
 //     res.status(500).json({ message: 'Error deleting booking', error: err.message });
 //   }
 // };
+
+
 const CarBooking = require('../models/carBookingModel');
 
 // GET ALL / FILTER BOOKINGS

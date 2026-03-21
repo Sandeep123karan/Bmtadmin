@@ -19,6 +19,8 @@
 // }, { timestamps: true });
 
 // module.exports = mongoose.model('CarBooking', carBookingSchema);
+
+
 const mongoose = require('mongoose');
 
 const carBookingSchema = new mongoose.Schema({

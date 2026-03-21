@@ -1,0 +1,243 @@
+const MotelBooking = require("../models/MotelBooking");
+const Motel = require("../models/Motel");
+
+/* =========================================================
+   CREATE BOOKING
+========================================================= */
+exports.createBooking = async (req, res) => {
+  try {
+    const {
+      motelId,
+      roomType,
+      checkInDate,
+      checkOutDate,
+      totalGuests = 1,
+      totalRooms = 1,
+      contactDetails = {}
+    } = req.body;
+
+    /* ================= VALIDATION ================= */
+    if (!motelId || !checkInDate || !checkOutDate) {
+      return res.status(400).json({
+        success: false,
+        message: "motelId, checkInDate, checkOutDate required"
+      });
+    }
+
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+
+    if (isNaN(checkIn) || isNaN(checkOut)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format"
+      });
+    }
+
+    /* ================= FIND MOTEL ================= */
+    const motel = await Motel.findById(motelId);
+    if (!motel) {
+      return res.status(404).json({
+        success: false,
+        message: "Motel not found"
+      });
+    }
+
+    /* ================= FIND ROOM ================= */
+    // const room = motel.roomTypes.find(
+    //   (r) => r.roomName === roomType
+    // );
+    const room = motel.roomTypes.find(
+  (r) =>
+    r.roomName?.trim().toLowerCase() ===
+    roomType?.trim().toLowerCase()
+);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room type not found"
+      });
+    }
+
+    /* ================= CALCULATE NIGHTS ================= */
+    const nights = Math.ceil(
+      (checkOut - checkIn) / (1000 * 60 * 60 * 24)
+    );
+
+    if (nights <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Check-out must be after check-in"
+      });
+    }
+
+    /* ================= AVAILABILITY ================= */
+    if (room.availableRooms < totalRooms) {
+      return res.status(400).json({
+        success: false,
+        message: `Only ${room.availableRooms} rooms available`
+      });
+    }
+
+    /* ================= PRICE CALC ================= */
+    const basePrice = Number(room.pricePerNight || 0) * totalRooms * nights;
+
+    const discountPercent = Number(motel.discountPercentage || 0);
+    const taxPercent = Number(motel.taxPercentage || 12);
+
+    const discount = (basePrice * discountPercent) / 100;
+    const taxedAmount = basePrice - discount;
+    const taxes = (taxedAmount * taxPercent) / 100;
+    const totalAmount = taxedAmount + taxes;
+
+    /* ================= CREATE ================= */
+    const booking = await MotelBooking.create({
+      motelId,
+      userId: req.user.id,
+      roomType,
+      checkInDate: checkIn,
+      checkOutDate: checkOut,
+      totalNights: nights,
+      totalGuests,
+      totalRooms,
+      contactDetails,
+
+      priceBreakup: {
+        basePrice,
+        discount,
+        taxes,
+        totalAmount
+      }
+    });
+
+    /* ================= UPDATE ROOMS ================= */
+    room.availableRooms -= totalRooms;
+    motel.totalBookings += 1;
+
+    if (room.availableRooms <= 0) {
+      room.isAvailable = false;
+    }
+
+    await motel.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Booking created successfully",
+      data: booking
+    });
+
+  } catch (error) {
+    console.error("CREATE BOOKING ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* =========================================================
+   GET MY BOOKINGS
+========================================================= */
+exports.getMyBookings = async (req, res) => {
+  try {
+    const bookings = await MotelBooking.find({
+      userId: req.user.id
+    })
+      .populate("motelId", "motelName address thumbnailImage")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      total: bookings.length,
+      data: bookings
+    });
+
+  } catch (error) {
+    console.error("GET MY BOOKINGS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* =========================================================
+   CANCEL BOOKING
+========================================================= */
+exports.cancelBooking = async (req, res) => {
+  try {
+    const booking = await MotelBooking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    if (booking.bookingStatus === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Already cancelled"
+      });
+    }
+
+    /* ================= UPDATE STATUS ================= */
+    booking.bookingStatus = "cancelled";
+    await booking.save();
+
+    /* ================= RESTORE ROOMS ================= */
+    const motel = await Motel.findById(booking.motelId);
+
+    if (motel) {
+      const room = motel.roomTypes.find(
+        (r) => r.roomName === booking.roomType
+      );
+
+      if (room) {
+        room.availableRooms += booking.totalRooms;
+        room.isAvailable = true;
+      }
+
+      await motel.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Booking cancelled successfully"
+    });
+
+  } catch (error) {
+    console.error("CANCEL ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* =========================================================
+   ADMIN ALL BOOKINGS
+========================================================= */
+exports.getAllBookings = async (req, res) => {
+  try {
+    const bookings = await MotelBooking.find()
+      .populate("motelId", "motelName")
+      .populate("userId", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      total: bookings.length,
+      data: bookings
+    });
+
+  } catch (error) {
+    console.error("ADMIN BOOKINGS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
