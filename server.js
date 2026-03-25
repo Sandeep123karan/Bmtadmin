@@ -131,6 +131,7 @@ const vacationHouseRoutes = require("./routes/vacationHouseRoutes");
 const holidayParkRoutes = require("./routes/holidayParkRoutes");
 const loveHotelRoutes = require("./routes/loveHotelRoutes");
 const loveHotelBookingRoutes = require("./routes/loveHotelBookingRoutes");
+const hostelBookingRoutes = require("./routes/hostelBookingRoutes");
 
 
 // --------------------------------------
@@ -225,6 +226,7 @@ app.use("/api", trainAmendmentRoutes);
 app.use("/api", trainMarkupRoutes);
 app.use("/api/darshan-bookings", darshanBookingRoutes);
 app.use("/api/bus", busRoutes);
+app.use("/api/hostel-bookings", hostelBookingRoutes);
 
 // ⭐ Cruise Route
 app.use("/api/cruises", cruiseRoutes);
@@ -266,8 +268,27 @@ app.use("/api/love-hotel-bookings", loveHotelBookingRoutes);
 const motelBookingRoutes = require("./routes/motelBookingRoutes");
 
 app.use("/api/motel-bookings", motelBookingRoutes);
+const placeBookingRoutes = require("./routes/placeBookingRoutes");
 
+app.use("/api/place-bookings", placeBookingRoutes);
+const homeStayBookingRoutes = require("./routes/homeStayBookingRoutes");
 
+app.use("/api/homestay-bookings", homeStayBookingRoutes);
+const houseboatBookingRoutes = require("./routes/houseboatBookingRoutes");
+
+app.use("/api/houseboat-bookings", houseboatBookingRoutes);
+const apartmentBookingRoutes = require("./routes/apartmentBookingRoutes");
+
+app.use("/api/apartment-bookings", apartmentBookingRoutes);
+const guestHouseBookingRoutes = require("./routes/guestHouseBookingRoutes");
+
+app.use("/api/guesthouse-bookings", guestHouseBookingRoutes);
+const loungeBookingRoutes = require("./routes/loungeBookingRoutes");
+
+app.use("/api/lounge-bookings", loungeBookingRoutes);
+const resortBookingRoutes = require("./routes/resortBookingRoutes");
+
+app.use("/api/resort-bookings", resortBookingRoutes);
 // --------------------------------------
 // Worldwide Airlines API
 // --------------------------------------

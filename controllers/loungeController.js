@@ -1,30 +1,99 @@
-const Lounge = require("../models/loungeModel");
+// const Lounge = require("../models/loungeModel");
 
 
 // ================= ADD LOUNGE =================
+// exports.addLounge = async (req, res) => {
+//   try {
+//     let images = [];
+
+//     if (req.files && req.files.loungeImages) {
+//       images = req.files.loungeImages.map(file => file.filename);
+//     }
+
+//     const loungeData = {
+//       ...req.body,
+//       loungeImages: images,
+//       status: "pending" // default approval
+//     };
+
+//     const newLounge = await Lounge.create(loungeData);
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Lounge submitted for approval",
+//       data: newLounge
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+const Lounge = require("../models/loungeModel");
+const bcrypt = require("bcryptjs");
+
+/* ================= ADD LOUNGE ================= */
 exports.addLounge = async (req, res) => {
   try {
-    let images = [];
+    let {
+      ownerName,
+      email,
+      phone,
+      password,
+      loungeName,
+      airportName
+    } = req.body;
 
+    // ✅ REQUIRED VALIDATION
+    if (!ownerName || !email || !phone || !loungeName || !airportName) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing"
+      });
+    }
+
+    // ✅ DUPLICATE CHECK
+    const existing = await Lounge.findOne({ email });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered"
+      });
+    }
+
+    // ✅ PASSWORD HASH
+    let hashedPassword = null;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(password, salt);
+    }
+
+    // ✅ IMAGE HANDLING
+    let images = [];
     if (req.files && req.files.loungeImages) {
       images = req.files.loungeImages.map(file => file.filename);
     }
 
     const loungeData = {
       ...req.body,
+      password: hashedPassword,
       loungeImages: images,
-      status: "pending" // default approval
+      status: "pending"
     };
 
     const newLounge = await Lounge.create(loungeData);
 
     res.status(201).json({
       success: true,
-      message: "Lounge submitted for approval",
+      message: "Lounge submitted for approval ✅",
       data: newLounge
     });
 
   } catch (error) {
+    console.error("Add Lounge Error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message

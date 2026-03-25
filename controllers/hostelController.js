@@ -13,9 +13,9 @@ exports.addHostel = async (req, res) => {
     const propertyId = "HSTL" + random;
 
     /* ================= HOSTEL IMAGES ================= */
-    const hostelImages = files.hostelImages?.map(f => f.path) || [];
-    const receptionImages = files.receptionImages?.map(f => f.path) || [];
-    const roomGallery = files.roomGallery?.map(f => f.path) || [];
+   const hostelImages = files.hostelImages?.map(f => f.path || f.url) || [];
+    const receptionImages = files.receptionImages?.map(f => f.path || f.url)
+    const roomGallery = files.roomGallery?.map(f => f.path || f.url)
     const washroomImages = files.washroomImages?.map(f => f.path) || [];
     const kitchenImages = files.kitchenImages?.map(f => f.path) || [];
 

@@ -3,16 +3,87 @@ const slugify = require("slugify");
 
 
 // ================= CREATE PLACE =================
+// exports.createPlace = async (req, res) => {
+//   try {
+//     const data = req.body;
+
+//     // slug
+//     if (data.placeName) {
+//       data.slug = slugify(data.placeName, { lower: true });
+//     }
+
+//     // cloudinary images
+//     if (req.files?.coverImage) {
+//       data.coverImage = req.files.coverImage[0].path;
+//     }
+
+//     if (req.files?.bannerImage) {
+//       data.bannerImage = req.files.bannerImage[0].path;
+//     }
+
+//     if (req.files?.gallery) {
+//       data.gallery = req.files.gallery.map(file => file.path);
+//     }
+
+//     const place = await Place.create(data);
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Place created successfully",
+//       data: place
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
 exports.createPlace = async (req, res) => {
   try {
-    const data = req.body;
+    let data = req.body;
 
-    // slug
-    if (data.placeName) {
-      data.slug = slugify(data.placeName, { lower: true });
+    /* ================= VALIDATION ================= */
+    if (!data.placeName || !data.country || !data.city) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing"
+      });
     }
 
-    // cloudinary images
+    /* ================= SAFE PARSE ================= */
+    const parseField = (field) => {
+      if (!field) return [];
+      if (typeof field === "string") {
+        try {
+          return JSON.parse(field);
+        } catch {
+          return [];
+        }
+      }
+      return field;
+    };
+
+    data.highlights = parseField(data.highlights);
+    data.amenities = parseField(data.amenities);
+    data.tags = parseField(data.tags);
+    data.faqs = parseField(data.faqs);
+    data.activities = parseField(data.activities);
+
+    /* ================= BOOLEAN FIX ================= */
+    data.isTrending = data.isTrending === "true";
+    data.isPopular = data.isPopular === "true";
+    data.isTopDestination = data.isTopDestination === "true";
+    data.isRecommended = data.isRecommended === "true";
+
+    /* ================= SLUG FIX ================= */
+    data.slug = slugify(
+      data.placeName + "-" + Date.now(),
+      { lower: true }
+    );
+
+    /* ================= IMAGES ================= */
     if (req.files?.coverImage) {
       data.coverImage = req.files.coverImage[0].path;
     }
@@ -25,6 +96,7 @@ exports.createPlace = async (req, res) => {
       data.gallery = req.files.gallery.map(file => file.path);
     }
 
+    /* ================= SAVE ================= */
     const place = await Place.create(data);
 
     res.status(201).json({
@@ -34,6 +106,7 @@ exports.createPlace = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("PLACE ERROR:", error);
     res.status(500).json({
       success: false,
       message: error.message
