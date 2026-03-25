@@ -63,7 +63,7 @@
 
 
 
-const HotelBooking = require("../models/HotelBookingModel");
+const HotelBooking = require("../models/hotelBookingModel");
 
 /* ================= CREATE ================= */
 exports.createBooking = async (req, res) => {
