@@ -14,7 +14,18 @@ const app = express();
 const PORT = process.env.PORT || 9000;
 
 
-app.use(cors());
+// app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://front-bmt.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads")); 
