@@ -301,6 +301,10 @@ app.use("/api/lounge-bookings", loungeBookingRoutes);
 const resortBookingRoutes = require("./routes/resortBookingRoutes");
 
 app.use("/api/resort-bookings", resortBookingRoutes);
+const authRoutes = require("./routes/authRoutes");
+
+// ✅ Routes use
+app.use("/api/auth", authRoutes);
 // --------------------------------------
 // Worldwide Airlines API
 // --------------------------------------
