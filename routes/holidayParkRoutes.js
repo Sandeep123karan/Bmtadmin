@@ -45,7 +45,7 @@ router.put(
 /* =========================================================
    📋 GET ALL PARKS (ADMIN)
 ========================================================= */
-router.get("/all", protect,  ctrl.getAllHolidayParks);
+router.get("/all",   ctrl.getAllHolidayParks);
 
 /* =========================================================
    👤 VENDOR MY PARKS
