@@ -1,81 +1,54 @@
-const express = require("express");
-const router = express.Router();
+const jwt = require("jsonwebtoken");
+const Customer = require("../models/Customer");
 
-const ctrl = require("../controllers/holidayParkController");
+// 🔐 User Protect Middleware
+exports.protectUser = async (req, res, next) => {
+  try {
+    let token;
 
-// ✅ correct middleware path
-const { protect, isAdmin, isVendor } = require("../middleware/authMiddleware");
-const cloudUpload = require("../middleware/cloudUpload");
+    // Token check
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
-/* =========================================================
-   📸 CLOUDINARY UPLOAD
-========================================================= */
-const upload = cloudUpload("holidayparks");
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first",
+      });
+    }
 
-/* =========================================================
-   🏕️ ADD HOLIDAY PARK (ADMIN + VENDOR)
-========================================================= */
-router.post(
-  "/add",
-  protect,
-  upload.fields([
-    { name: "thumbnailImage", maxCount: 1 },
-    { name: "bannerImages", maxCount: 10 },
-    { name: "galleryImages", maxCount: 15 },
-    { name: "roomImages", maxCount: 15 },
-  ]),
-  ctrl.addHolidayPark
-);
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-/* =========================================================
-   ✏️ UPDATE HOLIDAY PARK
-========================================================= */
-router.put(
-  "/update/:id",
-  protect,
-  upload.fields([
-    { name: "thumbnailImage", maxCount: 1 },
-    { name: "bannerImages", maxCount: 10 },
-    { name: "galleryImages", maxCount: 15 },
-    { name: "roomImages", maxCount: 15 },
-  ]),
-  ctrl.updateHolidayPark
-);
+    // Get user
+    const user = await Customer.findById(decoded.id).select("-password");
 
-/* =========================================================
-   📋 GET ALL PARKS (ADMIN)
-========================================================= */
-router.get("/all", protect,  ctrl.getAllHolidayParks);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-/* =========================================================
-   👤 VENDOR MY PARKS
-========================================================= */
-router.get("/vendor/my", protect, isVendor, ctrl.vendorMyParks);
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is blocked",
+      });
+    }
 
-/* =========================================================
-   🔍 GET SINGLE PARK
-========================================================= */
-router.get("/single/:id", ctrl.getSingleHolidayPark);
+    // attach user to req
+    req.user = user;
 
-/* =========================================================
-   🗑️ DELETE PARK (ADMIN)
-========================================================= */
-router.delete("/delete/:id", protect,  ctrl.deleteHolidayPark);
-
-/* =========================================================
-   🔥 ADMIN APPROVAL SYSTEM
-========================================================= */
-
-/* pending list */
-router.get("/pending/all", protect,  ctrl.getPendingParks);
-
-/* approved list */
-router.get("/approved/all", protect,  ctrl.getApprovedParks);
-
-/* approve */
-router.put("/approve/:id", protect,  ctrl.approveHolidayPark);
-
-/* reject */
-router.put("/reject/:id", protect,  ctrl.rejectHolidayPark);
-
-module.exports = router;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
+  }
+};
