@@ -21,7 +21,8 @@ app.use(
       "https://front-bmt.vercel.app",
       "http://localhost:5173",
       "http://localhost:3000",
-      "https://papayawhip-bear-895902.hostingersite.com"
+      "https://gold-raven-387595.hostingersite.com",
+      "https://papayawhip-bear-895902.hostingersite.com",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
