@@ -23,6 +23,7 @@ app.use(
       "http://localhost:3000",
       "https://gold-raven-387595.hostingersite.com",
       "https://papayawhip-bear-895902.hostingersite.com",
+      "https://khaki-jellyfish-519623.hostingersite.com",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
